@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,10 +65,19 @@ class authController extends Controller
         }
 
         $dataUser = User::where('email', $request->email)->first();
+        $role = Role::join("user_role", "user_role.role_id", "=", "roles.id")
+            ->join("users", "users.id", "=", "user_role.role_id")
+            ->where("user_id", $dataUser->id)
+            ->pluck("roles.role_name")->toArray();
+
+        if (empty($role)) {
+            $role = ["*"];
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Success',
-            'token' => $dataUser->createToken('API Token')->plainTextToken
+            'token' => $dataUser->createToken('API Token', $role)->plainTextToken
         ], 200);
     }
 }
